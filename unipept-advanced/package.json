@@ -1,0 +1,17 @@
+{
+  "name": "unipept_missed_cleavages",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^3.2.0",
+    "axios": "^0.21.1",
+    "cli-progress": "^3.9.0"
+  }
+}
