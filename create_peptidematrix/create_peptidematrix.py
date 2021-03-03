@@ -133,7 +133,7 @@ def mainPSM(myPath, result_file):
 
 # Gut_MO
 # myPath = <my_path>
-# result_PSM = "peptidematrix_Gut_MO.csv"
+# result_PSM = "peptidematrix_Fecal_MO.csv"
 # mainPSM(myPath=myPath, result_PSM=result_PSM)
 
 
