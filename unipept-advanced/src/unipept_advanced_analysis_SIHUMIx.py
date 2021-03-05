@@ -1,5 +1,5 @@
-with open("C:\\Users\\tvdbo\\OneDrive\\Documents\\Projecten\\ims-contest\\SIHUMIx-Unipept-advAnalysis-mch-Feb21\\intersection_lca_final_lineage.csv", 'r') as in_f, \
-        open("C:\\Users\\tvdbo\\OneDrive\\Documents\\Projecten\\ims-contest\\SIHUMIx-Unipept-advAnalysis-mch-Feb21\\intersection_lca_final_lineage_clean.csv", "w") as out_f:
+with open("intersection_lca_final_lineage.csv", 'r') as in_f, \
+        open("intersection_lca_final_lineage_clean.csv", "w") as out_f:
     i = 0
     j = 0
     k = 0
