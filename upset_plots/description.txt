@@ -1,1 +1,1 @@
-This folder contains the scripts that were used to create the UpSet plots.
+This folder contains the R scripts used for the main figures of the paper (when they were calculated and produced by R)
