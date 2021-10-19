@@ -1,0 +1,291 @@
+---
+title: 'Critical Assessment of Metaproteome Investigation (CAMPI): a Multi-Lab Comparison
+  of Established Workflows'
+author: "Benoit J. Kunath"
+date: "1/22/2021"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+This is the R markdown for the CAMPI challenge paper.
+Two datasets were used to compare wet- and dry-lab methodologies for metaproteomics.
+
+The first step was to compare bioinformatic pipelines
+
+## Datasets and Folders
+
+
+```{r start}
+set.seed(123)
+setwd("C:/Users/benoit.kunath/Documents/MetaP_Contest/Markdown")
+```
+
+## FIGURE 3
+
+
+Here is the figure 3A
+
+```{r figure 3A, echo=FALSE, warning=FALSE, message=FALSE}
+library("UpSetR")
+setwd("C:/Users/benoit.kunath/Documents/MetaP_Contest/Markdown")
+SIHUMI_Pept_S11_Met <- read.csv("Peptide_SIHUMIx_DB1_S11_Metadata.csv")
+#Total Non Redundant Set = 45807
+upset(SIHUMI_Pept_S11_Met, nsets = 4, nintersects = NA, mb.ratio = c(0.7, 0.3), order.by = c("freq", "degree"), decreasing = c(TRUE,TRUE), boxplot.summary = c("Length","MC"))
+
+```
+
+Here is the figure 3B
+
+```{r figure 3B, echo=FALSE, warning=FALSE, message=FALSE}
+setwd("C:/Users/benoit.kunath/Documents/MetaP_Contest/Markdown")
+Fecal_Pept_F07_Met <- read.csv("Peptide_Fecal_DB2_F07_Metadata.csv")
+#Total Non Redundant Set = 31181
+upset(Fecal_Pept_F07_Met, nsets = 4, nintersects = NA, mb.ratio = c(0.7, 0.3), order.by = c("freq", "degree"), decreasing = c(TRUE,TRUE), boxplot.summary = c("Length","MC"))
+
+```
+
+
+
+## FIGURE 4
+
+Supplementary figures 1 and 2 used to generate the main figure 4
+
+```{r figure 4, echo=FALSE, warning=FALSE, message=FALSE}
+setwd("C:/Users/benoit.kunath/Documents/MetaP_Contest/Markdown")
+
+#SIHUMIx
+SIHUMI_Pept_PS <- read.csv("Peptide_SIHUMIx_DB1_PS.csv")
+#Total Non Redundant Set = 73054
+upset(SIHUMI_Pept_PS, nsets = 6, nintersects = 20, mb.ratio = c(0.7, 0.3), order.by = "freq")
+
+SIHUMI_PAPPSO_Subgrp <- read.csv("Protein_SIHUMIx_PAPPSO_Subgrp.csv")
+SIHUMI_PAPPSO_Subgrp[-1] [SIHUMI_PAPPSO_Subgrp[-1] > 0] <- 1 #converts from abundance to P/A
+#Total Non Redundant Set = 8965
+upset(SIHUMI_PAPPSO_Subgrp, nsets = 6, nintersects = 20, mb.ratio = c(0.7, 0.3), order.by = "freq")
+
+SIHUMI_PAPPSO_Subgrp_Top50 <- read.csv("Protein_SIHUMIx_PAPPSO_Subgrp_Top50%.csv")
+SIHUMI_PAPPSO_Subgrp_Top50[-1] [SIHUMI_PAPPSO_Subgrp_Top50[-1] > 0] <- 1 #converts from abundance to P/A
+#Total Non Redundant Set = 4483
+upset(SIHUMI_PAPPSO_Subgrp_Top50, nsets = 6, nintersects = 20, mb.ratio = c(0.7, 0.3), order.by = "freq")
+
+#FECAL
+Fecal_Pept_PS <- read.csv("Peptide_Fecal_DB2_PS.csv")
+#Total Non Redundant Set = 63212
+upset(Fecal_Pept_PS, nsets = 4, nintersects = 20, mb.ratio = c(0.7, 0.3), order.by = "freq")
+
+Fecal_MPA_Subgrp <- read.csv("Protein_Fecal_MPA_Subgrp.csv")
+Fecal_MPA_Subgrp[-1] [Fecal_MPA_Subgrp[-1] > 0] <- 1 #converts from abundance to P/A
+#Total Non Redundant Set = 20539
+upset(Fecal_MPA_Subgrp, nsets = 4, nintersects = 20, mb.ratio = c(0.7, 0.3), order.by = "freq")
+
+Fecal_MPA_Subgrp_Top50 <- read.csv("Protein_Fecal_MPA_Subgrp_Top50%.csv")
+Fecal_MPA_Subgrp_Top50[-1] [Fecal_MPA_Subgrp_Top50[-1] > 0] <- 1 #converts from abundance to P/A
+#Total Non Redundant Set = 10270
+upset(Fecal_MPA_Subgrp_Top50, nsets = 4, nintersects = 20, mb.ratio = c(0.7, 0.3), order.by = "freq")
+
+```
+
+## Omics Comparison - SIHUMIx
+
+FIGURE 5A/B and SUPPL. FIGURE 8A/B
+Figure 5A is a composite figure combining the PCA plot and the clustering dimension obtained from the dendrogram (Suppl. Figure 8A)
+
+```{r figure 5A/B, echo=FALSE, warning=FALSE, message=FALSE}
+# Load package
+library(ggbiplot)
+library(ellipse)
+library(pals)
+library(tidyverse)
+library(reshape2)
+library(corrplot)
+library(cluster)
+
+# Load Dataset
+setwd("C:/Users/benoit.kunath/Documents/MetaP_Contest/Markdown/")
+input_matrix_raw <- read.table(file = 'SIHUMI_Comp_V2.tsv', sep = '\t', row.names = "Taxa", header = TRUE)
+input_matrix_raw[is.na(input_matrix_raw)] <- 0
+
+t.input_matrix_raw <- t(input_matrix_raw)
+p <- prcomp(t.input_matrix_raw, scale = T)
+s <- summary(p)
+
+###Figure 5A / Plot PCA
+pch.group <- c(rep(21, times=6), rep(22, times=6), rep(24, times=1))
+col.group <- c(rep("skyblue2", times=6), rep("gold", times=6), rep("green2", times=1))
+plot(p$x[,1], p$x[,2], xlab=paste("PCA 1 (", round(s$importance[2]*100, 1), "%)", sep = ""), ylab=paste("PCA 2 (", round(s$importance[5]*100, 1), "%)", sep = ""), pch=pch.group, col="black", bg=col.group, cex=2, las=1, asp=1)
+# Add grid lines
+abline(v=0, lty=2, col="grey50")
+abline(h=0, lty=2, col="grey50")
+# Add labels
+text(p$x[,1], p$x[,2], labels=row.names(p$x), pos=c(1,3,4,2), font=2)
+# Add Legend
+legend("bottomleft", legend=c("Prophane", "Unipept", "mOTU"), col="black", pt.bg=c("skyblue2", "gold", "green2"), pch=c(21, 22, 24), pt.cex=1.5)
+
+tab <- matrix(c(p$x[,1], p$x[,2]), ncol=2)
+# Calculate correlations
+c1 <- cor(tab[1:6,])
+c2 <- cor(tab[7:12,])
+
+# Plot ellipse
+polygon(ellipse(c1*(max(abs(p$rotation))*1), centre=colMeans(tab[1:6,]), level=0.95), col=adjustcolor("skyblue2", alpha.f=0.25), border="skyblue")
+polygon(ellipse(c2*(max(abs(p$rotation))*1), centre=colMeans(tab[7:12,]), level=0.95), col=adjustcolor("gold", alpha.f=0.25), border="gold2")
+
+
+###Supp. Figure 8A/B
+
+#Correlation
+cor.mtest <- function(mat, ...) {
+  mat <- as.matrix(mat)
+  n <- ncol(mat)
+  p.mat<- matrix(NA, n, n)
+  diag(p.mat) <- 0
+  for (i in 1:(n - 1)) {
+    for (j in (i + 1):n) {
+      tmp <- cor.test(mat[, i], mat[, j], ...)
+      p.mat[i, j] <- p.mat[j, i] <- tmp$p.value
+    }
+  }
+  colnames(p.mat) <- rownames(p.mat) <- colnames(mat)
+  p.mat
+}
+
+
+mcor_param <- cor(input_matrix_raw, use="everything", method="pearson")
+mcor_rank <- cor(input_matrix_raw, use="everything", method="spearman")
+# Matrice de p-value de la corrélation
+p.mat <- cor.mtest(input_matrix_raw)
+
+#Plot Correlations
+plotcor_param <- corrplot(mcor_param, method="number", type="upper", order="hclust", tl.col="black", tl.srt=45, mar=c(1,0,1,0), p.mat = p.mat, sig.level = 0.001, insig = "blank")
+plotcor_rank <- corrplot(mcor_rank, method="number", type="lower", order="hclust", tl.col="black", tl.srt=45, mar=c(1,0,1,0), p.mat = p.mat, sig.level = 0.001, insig = "blank")
+plotcor_param[lower.tri(plotcor_param)] <- plotcor_rank[lower.tri(plotcor_rank)]
+corrplot(plotcor_param, method="number", tl.col="black", tl.srt=45, mar=c(1,0,1,0), p.mat = p.mat, sig.level = 0.001, insig = "blank")
+
+
+#Plot Dendrogram
+hcl_man_ward <- agnes(t(input_matrix_raw), metric= "manhattan", method = "ward")
+pltree(hcl_man_ward, cex = 0.6, hang = -1, main = "Dendrogram of agnes")
+rect.hclust(hcl_man_ward, k = 3, border = 2:5)
+
+sub_grp <- cutree(hcl_man_ward, k = 3)
+
+
+###Figure 5B / Plot BarPlot
+input_barplot <- read.table(file = 'SIHUMI_Comp_V2.tsv', sep = '\t', header = TRUE)
+input_barplot[is.na(input_barplot)] <- 0
+input_barplot_melt <- melt(input_barplot, id.vars= "Taxa")
+BP_SIHUMIx = ggplot(input_barplot_melt, aes(x = variable, fill = fct_reorder(Taxa, value), y = value)) + 
+  geom_bar(stat = "identity", colour = "black") +
+  scale_fill_manual(values=c("#F7E1A0","#C075A6","#782AB6","#AAF400","#BDCDFF","#3283FE","#FEAF16","#B00068","#325A9B","#90AD1C"))
+BP_SIHUMIx + coord_flip() + theme(legend.position="bottom")
+
+
+
+```
+
+## Omics Comparison - FECAL
+
+FIGURE 6A/B and SUPPL. FIGURE 10A/B
+Figure 6A is a composite figure combining the PCA plot and the clustering dimension obtained from the dendrogram (Suppl. Figure 10A)
+
+```{r figure 6A/B, echo=FALSE, warning=FALSE, message=FALSE}
+# Load package
+library(ggbiplot)
+library(ellipse)
+library(pals)
+library(tidyverse)
+library(reshape2)
+library(corrplot)
+library(cluster)
+
+# Load Dataset
+setwd("C:/Users/benoit.kunath/Documents/MetaP_Contest/Omic_Comparison/GUT/matrice/MPA")
+input_matrix_raw <- read.table(file = 'GUT_Comp.tsv', sep = '\t', row.names = "Taxa", header = TRUE)
+input_matrix_raw[is.na(input_matrix_raw)] <- 0
+
+t.input_matrix_raw <- t(input_matrix_raw)
+p <- prcomp(t.input_matrix_raw, scale = T)
+s <- summary(p)
+
+###Figure 6A / Plot PCA
+pch.group <- c(rep(21, times=4), rep(22, times=4), rep(24, times=2))
+col.group <- c(rep("skyblue2", times=4), rep("gold", times=4), rep("green2", times=2))
+plot(p$x[,1], p$x[,2], xlab=paste("PCA 1 (", round(s$importance[2]*100, 1), "%)", sep = ""), ylab=paste("PCA 2 (", round(s$importance[5]*100, 1), "%)", sep = ""), pch=pch.group, col="black", bg=col.group, cex=2, las=1, asp=1)
+# Add grid lines
+abline(v=0, lty=2, col="grey50")
+abline(h=0, lty=2, col="grey50")
+# Add labels
+text(p$x[,1], p$x[,2], labels=row.names(p$x), pos=c(1,3,4,2), font=2)
+# Add Legend
+legend("bottomleft", legend=c("Prophane", "Unipept", "mOTU"), col="black", pt.bg=c("skyblue2", "gold", "green2"), pch=c(21, 22, 24), pt.cex=1.5)
+
+tab <- matrix(c(p$x[,1], p$x[,2]), ncol=2)
+# Calculate correlations
+c1 <- cor(tab[1:4,])
+c2 <- cor(tab[5:8,])
+
+# Plot ellipse
+polygon(ellipse(c1*(max(abs(p$rotation))*1), centre=colMeans(tab[1:4,]), level=0.95), col=adjustcolor("skyblue2", alpha.f=0.25), border="skyblue")
+polygon(ellipse(c2*(max(abs(p$rotation))*1), centre=colMeans(tab[5:8,]), level=0.95), col=adjustcolor("gold", alpha.f=0.25), border="gold2")
+
+
+###Supp. Figure 10A/B
+
+#Correlation
+cor.mtest <- function(mat, ...) {
+  mat <- as.matrix(mat)
+  n <- ncol(mat)
+  p.mat<- matrix(NA, n, n)
+  diag(p.mat) <- 0
+  for (i in 1:(n - 1)) {
+    for (j in (i + 1):n) {
+      tmp <- cor.test(mat[, i], mat[, j], ...)
+      p.mat[i, j] <- p.mat[j, i] <- tmp$p.value
+    }
+  }
+  colnames(p.mat) <- rownames(p.mat) <- colnames(mat)
+  p.mat
+}
+
+
+mcor_param <- cor(input_matrix_raw, use="everything", method="pearson")
+mcor_rank <- cor(input_matrix_raw, use="everything", method="spearman")
+# Matrice de p-value de la corrélation
+p.mat <- cor.mtest(input_matrix_raw)
+
+#Plot Correlations
+plotcor_param <- corrplot(mcor_param, method="number", type="upper", order="hclust", tl.col="black", tl.srt=45, mar=c(1,0,1,0), p.mat = p.mat, sig.level = 0.001, insig = "blank")
+plotcor_rank <- corrplot(mcor_rank, method="number", type="lower", order="hclust", tl.col="black", tl.srt=45, mar=c(1,0,1,0), p.mat = p.mat, sig.level = 0.001, insig = "blank")
+plotcor_param[lower.tri(plotcor_param)] <- plotcor_rank[lower.tri(plotcor_rank)]
+corrplot(plotcor_param, method="number", tl.col="black", tl.srt=45, mar=c(1,0,1,0), p.mat = p.mat, sig.level = 0.001, insig = "blank")
+
+
+#Plot Dendrogram
+hcl_man_ward <- agnes(t(input_matrix_raw), metric= "manhattan", method = "ward")
+pltree(hcl_man_ward, cex = 0.6, hang = -1, main = "Dendrogram of agnes")
+rect.hclust(hcl_man_ward, k = 3, border = 2:5)
+
+sub_grp <- cutree(hcl_man_ward, k = 3)
+
+
+###Figure 6B / Plot BarPlot
+input_barplot <- read.table(file = 'GUT_Comp.tsv', sep = '\t', header = TRUE)
+input_barplot[is.na(input_barplot)] <- 0
+input_barplot_melt <- melt(input_barplot, id.vars= "Taxa")
+BP_GUT = ggplot(input_barplot_melt, aes(x = variable, fill = fct_reorder(Taxa, value), y = value)) + 
+  geom_bar(stat = "identity", colour = "black") +
+  scale_fill_manual(values=c("#5A5156", "#E4E1E3", "#F6222E","#FE00FA","#16FF32","#2ED9FF","#DEA0FD","#AA0DFE","#F8A19F","#1CFFCE","#C4451C","#1C8356","#85660D","#B10DA1","#FBE426","#1CBE4F","#FA0087","#FC1CBF","#F7E1A0","#C075A6","#782AB6","#AAF400","#BDCDFF","#3283FE","#FEAF16","#B00068","#325A9B","#90AD1C"))
+BP_GUT + coord_flip() + theme(legend.position="bottom")
+
+```
+
+##Comments
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
