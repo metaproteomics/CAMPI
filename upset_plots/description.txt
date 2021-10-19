@@ -1,2 +1,0 @@
-This folder contains the R scripts used for the unprocessed main figures of the paper (when they were calculated and produced by R).
-All figures have then been post-processed for quality purpose.
