@@ -1,1 +1,2 @@
-Folder containing R-Scripts
+This folder contains the R-Script used to generate the main unprocessed figures of the paper (if they were calculated and produced through R).
+The figures were then post-processed for quality purpose.
